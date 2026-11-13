@@ -5,12 +5,7 @@
 name: Fast Build IPA - Pragmata
 
 on:
-  workflow_dispatch:
-  # Paused while builds run on the owner's Mac (2026-10-13). To build on push
-  # to main again, uncomment the three lines below.
-  # push:
-  #   branches: [main]
-  #   paths: [".github/workflows/build-ipa.yml"]
+  workflow_dispatch: {}
 
 # A push and a manual dispatch seconds apart used to start two parallel
 # multi-hour macOS jobs on the same commit.
