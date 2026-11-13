@@ -4,7 +4,7 @@
 # under GPL-3.0-or-later with the Madeira Converter Exception and modified for BCD in November 2026. See THIRD-PARTY-NOTICES.md.
 name: Fast Build IPA - Pragmata
 
-on:
+"on":
   workflow_dispatch: {}
 
 # A push and a manual dispatch seconds apart used to start two parallel
