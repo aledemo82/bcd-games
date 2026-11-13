@@ -1,0 +1,24 @@
+name: Check Metal Shader Converter hashes
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Verify all vendored converter files
+        shell: bash
+        run: |
+          set -uo pipefail
+          cd madeira-d3d12/third_party/metal-shader-converter
+          echo 'Checking SHA256SUMS against repository files...'
+          if sha256sum --check SHA256SUMS; then
+            echo 'All files match.'
+          else
+            echo 'One or more files are missing or have a different SHA-256.'
+            exit 1
+          fi
