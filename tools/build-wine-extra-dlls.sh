@@ -266,7 +266,7 @@ CMB=""
 if [ "${MADEIRA_COMBASE_BUILD:-1}" != 0 ] && [ -f "$R/wine/dlls/combase/apartment.c" ] && [ -f "$SHIP/combase.dll" ]; then
     CMB=combase
 fi
-[ -n "$todo$OGL$XI$WGI$UCX$NTS$XSE$FBT$ZMP$WER$WTY$OPT$SDL$DCO$CMB" ] || { echo "nothing to build"; exit 0; }
+[ -n "$todo$OGL$XI$WGI$UCX$NTS$XSE$FBT$ZMP$WER$WTY$OPT$SDL$DCO$CMB" ] || [ "${MADEIRA_COMCTL32_V6_BUILD:-1}" = 1 ] || { echo "nothing to build"; exit 0; }
 
 # The cached tree may have disabled winegstreamer because macOS has no
 # GStreamer headers. Only its real PE frontend is needed here; the iOS unix
