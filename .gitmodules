@@ -3,9 +3,9 @@
 	url = https://github.com/thebcd69/bcd-fex.git
 	branch = ios-port-2607
 [submodule "wine"]
-	path = wine
-	url = https://github.com/thebcd69/bcd-wine.git
-	branch = madeira-lgpl
+    path = wine
+    url = https://github.com/aledemo82/bcd-wine.git
+    branch = fix-comctl32-pragmata
 [submodule "dxmt"]
 	path = dxmt
 	url = https://github.com/thebcd69/bcd-dxmt.git
