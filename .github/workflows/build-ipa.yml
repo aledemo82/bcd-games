@@ -4424,6 +4424,28 @@ jobs:
         continue-on-error: true
         run: bash tools/build-wine-extra-dlls.sh "$GITHUB_WORKSPACE/wine/build-native"
 
+      # Pragmata/Requiem: fail before IPA packaging if the v6 DLL did not build.
+      - name: Verify comctl32 v6 ARM64EC for Pragmata and Requiem
+        shell: bash
+        run: |
+          python3 - <<'PYV6CHECK'
+          from pathlib import Path
+          import struct
+          p = Path('app/Madeira/arm64ec-windows/comctl32_v6.dll')
+          if not p.is_file() or p.stat().st_size < 1024:
+              raise SystemExit('::error::comctl32_v6.dll missing or empty; stopping IPA build')
+          d = p.read_bytes()
+          if d[:2] != b'MZ':
+              raise SystemExit('::error::comctl32_v6.dll is not a PE file')
+          pe = struct.unpack_from('<I', d, 0x3c)[0]
+          if d[pe:pe+4] != b'PE\0\0':
+              raise SystemExit('::error::comctl32_v6.dll has invalid PE header')
+          machine = struct.unpack_from('<H', d, pe+4)[0]
+          if machine != 0xa641:
+              raise SystemExit(f'::error::comctl32_v6.dll machine {machine:#x}, expected ARM64EC 0xa641')
+          print(f'::notice::comctl32_v6.dll verified: ARM64EC, {len(d)} bytes')
+          PYV6CHECK
+
       # madeira-bcd (Windows Vulkan): Wine's winevulkan.dll and vulkan-1.dll for the bundle's vulkan folder, not the farm (tools/build-vulkan-dlls.sh);
       # "Verify the Windows Vulkan pieces" refuses a package without them.
       - name: Build winevulkan.dll and vulkan-1.dll (Windows Vulkan)
