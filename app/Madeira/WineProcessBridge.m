@@ -1,3 +1,4 @@
+```
 /* Portions copyright 2026 Russell Barton: code taken from https://github.com/thebcd69/bcd-games (pull request #46 by rbarton124)
  * under GPL-3.0-or-later with the Madeira Converter Exception and modified for BCD in November 2026. See THIRD-PARTY-NOTICES.md. */
 /* Portions copyright 2026 SirDank, ft7t8drgwf-wq and 125hz: code taken from https://github.com/willfaust/Madeira (pull requests #349, #353, #360 and #363; commits 4e568c1, ba617bb and ada55ec)
@@ -2520,6 +2521,36 @@ static void *wine_process_thread(void *arg) {
                 }
             }
 
+            /* Pragmata and Resident Evil Requiem: opt-in comctl32 v6 for selected 64-bit games.
+             * The farm above recreates the default v5 links every launch.
+             * Override only this session, after farm creation, so unrelated
+             * games continue using the original comctl32.dll. */
+            {
+                const char *exeName = strrchr(madeira_exe, '\\');
+                exeName = exeName ? exeName + 1 : madeira_exe;
+                if (use_arm64ec && (strcasecmp(exeName, "pragmata_sketchbook.exe") == 0 ||
+                                    strcasecmp(exeName, "pragmata.exe") == 0 ||
+                                    strcasecmp(exeName, "re9demo.exe") == 0 ||
+                                    strcasecmp(exeName, "re9.exe") == 0)) {
+                    NSString *v6 = [bundlePath stringByAppendingPathComponent:@"arm64ec-windows/comctl32_v6.dll"];
+                    if ([fm fileExistsAtPath:v6]) {
+                        for (NSString *dir in @[@"sysx64", @"system32"]) {
+                            NSString *dst = [prefix stringByAppendingPathComponent:
+                                [NSString stringWithFormat:@"drive_c/windows/%@/comctl32.dll", dir]];
+                            [fm removeItemAtPath:dst error:nil];
+                            NSError *linkError = nil;
+                            if (![fm createSymbolicLinkAtPath:dst withDestinationPath:v6 error:&linkError])
+                                dprintf(STDERR_FILENO, "[game-comctl32-v6] %s: link failed: %s\n",
+                                        dir.UTF8String, linkError.localizedDescription.UTF8String);
+                            else
+                                dprintf(STDERR_FILENO, "[game-comctl32-v6] %s: v6 linked\n", dir.UTF8String);
+                        }
+                    } else {
+                        dprintf(STDERR_FILENO, "[game-comctl32-v6] v6 missing from IPA\n");
+                    }
+                }
+            }
+
             /* WoW64: the i386 farm, syswow64\wbem and the x86 side-by-side
              * store for every session once the bundle has it (docs/WOW64.md).
              * The store was seeded for a 32-bit target only, but a 64-bit
@@ -4031,3 +4062,4 @@ int wine_session_quit_desktop(void)
     wine_session_end();
     return 1;
 }
+```
