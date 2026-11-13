@@ -35,6 +35,16 @@ jobs:
         with:
           submodules: recursive
 
+      # Use the latest Pragmata fixes from the user's Wine fork.
+      - name: Use Pragmata Wine fork
+        shell: bash
+        run: |
+          git -C wine remote set-url origin https://github.com/aledemo82/bcd-wine.git
+          git -C wine fetch --depth=1 origin fix-comctl32-pragmata
+          git -C wine checkout --detach FETCH_HEAD
+          git -C wine submodule update --init --recursive
+          echo "Wine revision: $(git -C wine rev-parse HEAD)"
+
       # ContentView.swift uses glassEffect(.regular, in:), which needs the
       # iOS 26 SDK. The runner defaults to Xcode 16.4 (iOS 18.5), so pick the
       # newest Xcode installed rather than whatever xcode-select points at.
