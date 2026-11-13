@@ -820,6 +820,49 @@ PY
         echo "::warning::$d-optin.dll did not build; env.MADEIRA_OPTIN_DLLS = $d does nothing"
     fi
 done
+# Pragmata Sketchbook: ship the actual Common Controls v6 implementation alongside
+# the existing v5 DLL. The loader/runtime must select v6 for the affected game;
+# merely shipping this file does not redirect successful v5 loads.
+# Fail loudly if requested but unavailable, rather than producing a misleading IPA.
+if [ "${MADEIRA_COMCTL32_V6_BUILD:-1}" != 0 ]; then
+    v6src="$R/wine/dlls/comctl32_v6/Makefile.in"
+    v6out="$B/dlls/comctl32_v6/arm64ec-windows/comctl32_v6.dll"
+    v6tmp="$SHIP/comctl32_v6.dll.tmp"
+    if [ ! -f "$v6src" ]; then
+        echo "::error::Wine comctl32_v6 source is missing"; exit 1
+    fi
+    mkdir -p "$SHIP"
+    rm -f "$v6out" "$v6tmp"
+    if ! make -C "$B" -j"$JOBS" dlls/comctl32_v6/arm64ec-windows/comctl32_v6.dll > "$B.comctl32_v6.log" 2>&1; then
+        tail -60 "$B.comctl32_v6.log"
+        echo "::error::comctl32_v6.dll ARM64EC compilation failed"; exit 1
+    fi
+    if [ ! -s "$v6out" ]; then
+        echo "::error::comctl32_v6.dll was not generated"; exit 1
+    fi
+    cp "$v6out" "$v6tmp" || exit 1
+    "$MINGW/llvm-strip" "$v6tmp" || exit 1
+    python3 - "$v6tmp" <<'PYV6'
+import struct, sys
+p = sys.argv[1]
+d = open(p, 'rb').read()
+if d[:2] != b'MZ': raise SystemExit('Invalid COMCTL32 v6 DOS header')
+pe = struct.unpack_from('<I', d, 0x3c)[0]
+if d[pe:pe+4] != b'PE\0\0': raise SystemExit('Invalid COMCTL32 v6 PE header')
+machine = struct.unpack_from('<H', d, pe+4)[0]
+if machine != 0xa641: raise SystemExit(f'Expected ARM64EC (0xa641), got {machine:#x}')
+size = struct.unpack_from('<I', d, pe+24+56)[0]
+target = size + 0x10000
+if len(d) < target:
+    with open(p, 'ab') as f: f.write(b'\0' * (target - len(d)))
+PYV6
+    if [ $? -ne 0 ]; then
+        rm -f "$v6tmp"
+        echo "::error::comctl32_v6.dll failed PE validation"; exit 1
+    fi
+    mv "$v6tmp" "$SHIP/comctl32_v6.dll" || exit 1
+    echo "::notice::comctl32_v6.dll ARM64EC built and shipped (runtime selection still required)"
+fi
 echo "::notice::built $built extra Wine DLLs for arm64ec${failed:+ (failed:$failed)}"
 [ -n "$failed" ] && grep -m 10 "error" "$B.build.log"
 exit 0
