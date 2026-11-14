@@ -857,8 +857,12 @@ if len(d) < target:
     with open(p, 'ab') as f: f.write(b'\0' * (target - len(d)))
 PYV6
     if [ $? -ne 0 ]; then
-        rm -f "$v6tmp"
-        echo "::error::comctl32_v6.dll failed PE validation"; exit 1
+        # Keep the rejected binary for inspection; never ship it as a valid DLL.
+        mkdir -p "$R/comctl32-v6-diagnostics"
+        cp "$v6tmp" "$R/comctl32-v6-diagnostics/comctl32_v6-rejected.dll" || true
+        cp "$B.comctl32_v6.log" "$R/comctl32-v6-diagnostics/comctl32_v6-build.log" || true
+        echo "::error::comctl32_v6.dll failed PE validation; rejected binary saved for diagnostics"
+        exit 1
     fi
     mv "$v6tmp" "$SHIP/comctl32_v6.dll" || exit 1
     echo "::notice::comctl32_v6.dll ARM64EC built and shipped (runtime selection still required)"
