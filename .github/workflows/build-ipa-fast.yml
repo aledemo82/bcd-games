@@ -1119,7 +1119,9 @@ jobs:
             -DLLVM_ENABLE_TERMINFO=Off -DLLVM_ENABLE_LIBXML2=Off \
             -DLLVM_ENABLE_ZSTD=Off -DLLVM_ENABLE_ZLIB=Off \
             > "$GITHUB_WORKSPACE/llvm-ios-cfg.log" 2>&1
-          cmake --build toolchains/llvm-ios-build -j"$(sysctl -n hw.ncpu)" \
+          cmake --build toolchains/llvm-ios-build \
+           --target llvm-libraries \
+           -j"$(sysctl -n hw.ncpu)" \
             > "$GITHUB_WORKSPACE/llvm-ios-build.log" 2>&1
 
       - name: Verify LLVM iOS build
