@@ -1213,7 +1213,7 @@ jobs:
         shell: bash
         run: |
           INC="$GITHUB_WORKSPACE/madeira-d3d12/third_party/metal-shader-converter/include"
-          if ! bash -c 'source build/madeira-d3d12/deps.sh'; then
+          if ! bash -c 'set -x; source build/madeira-d3d12/deps.sh'; then
             echo "::error::the vendored Metal Shader Converter does not match its pinned hashes (build/madeira-d3d12/deps.sh)"
             exit 1
           fi
