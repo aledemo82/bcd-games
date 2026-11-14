@@ -1996,6 +1996,16 @@ jobs:
         continue-on-error: true
         run: bash tools/build-wine-extra-dlls.sh "$GITHUB_WORKSPACE/wine/build-native"
 
+      # Keep the rejected PE and its build log even if the optional build step failed.
+      - name: Upload comctl32 v6 diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: comctl32-v6-diagnostics
+          path: comctl32-v6-diagnostics/
+          if-no-files-found: ignore
+          retention-days: 7
+
       # Pragmata/Requiem: fail before IPA packaging if the v6 DLL did not build.
       - name: Verify comctl32 v6 ARM64EC for Pragmata and Requiem
         shell: bash
