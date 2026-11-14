@@ -843,14 +843,59 @@ if [ "${MADEIRA_COMCTL32_V6_BUILD:-1}" != 0 ]; then
     cp "$v6out" "$v6tmp" || exit 1
     "$MINGW/llvm-strip" "$v6tmp" || exit 1
     python3 - "$v6tmp" <<'PYV6'
-import struct, sys
+import sys
 p = sys.argv[1]
 d = open(p, 'rb').read()
-if d[:2] != b'MZ': raise SystemExit('Invalid COMCTL32 v6 DOS header')
+def verify_arm64ec(d):
+    import struct
+    def u16(o): return struct.unpack_from('<H', d, o)[0]
+    def u32(o): return struct.unpack_from('<I', d, o)[0]
+    def u64(o): return struct.unpack_from('<Q', d, o)[0]
+    if len(d) < 512 or d[:2] != b'MZ': raise ValueError('Invalid DOS header')
+    pe = u32(0x3c)
+    if pe + 264 > len(d) or d[pe:pe+4] != b'PE\0\0': raise ValueError('Invalid PE header')
+    machine = u16(pe+4)
+    if machine == 0xa641: return 'ARM64EC PE machine'
+    if machine != 0x8664: raise ValueError(f'Unsupported machine {machine:#x}')
+    opt = pe + 24
+    if u16(opt) != 0x20b or u32(opt+108) <= 10: raise ValueError('Missing PE32+ data directories')
+    imagebase = u64(opt+24)
+    load_rva, load_size = struct.unpack_from('<II', d, opt+112+10*8)
+    count = u16(pe+6)
+    sec = opt + u16(pe+20)
+    sections = []
+    for i in range(count):
+        off = sec + 40*i
+        if off+40 > len(d): raise ValueError('Truncated section table')
+        name = d[off:off+8].split(b'\0')[0]
+        vs, va, rawsize, rawptr = struct.unpack_from('<IIII', d, off+8)
+        sections.append((name, va, max(vs,rawsize), rawptr))
+    def rva_to_offset(rva, size=1):
+        for name,va,span,raw in sections:
+            if va <= rva and rva+size <= va+span and raw+(rva-va)+size <= len(d):
+                return raw+(rva-va)
+        raise ValueError(f'Unmapped RVA {rva:#x}')
+    if not any(name == b'.a64xrm' for name,*_ in sections):
+        raise ValueError('AMD64 PE without ARM64X relocation section')
+    if load_size < 0xd0: raise ValueError('Load configuration too small for CHPE metadata')
+    lc = rva_to_offset(load_rva, load_size)
+    if u32(lc) < 0xd0: raise ValueError('Load configuration lacks CHPE field')
+    chpe_va = u64(lc+0xc8)
+    if chpe_va < imagebase: raise ValueError('Missing CHPE metadata pointer')
+    chpe = rva_to_offset(chpe_va-imagebase, 16)
+    version = u32(chpe)
+    if version not in (1,2): raise ValueError(f'Unexpected CHPE metadata version {version}')
+    code_map_rva = u32(chpe+4)
+    code_map_count = u32(chpe+8)
+    if not 0 < code_map_count < 1000000: raise ValueError('Invalid ARM64EC code map count')
+    rva_to_offset(code_map_rva, 4)
+    return f'ARM64EC hybrid PE: CHPE v{version}, {code_map_count} code-map entries'
+try:
+    result = verify_arm64ec(d)
+except (ValueError, IndexError, struct.error) as e:
+    raise SystemExit(f'Invalid ARM64EC DLL: {e}')
+print(f'::notice::comctl32_v6.dll verified: {result}')
 pe = struct.unpack_from('<I', d, 0x3c)[0]
-if d[pe:pe+4] != b'PE\0\0': raise SystemExit('Invalid COMCTL32 v6 PE header')
-machine = struct.unpack_from('<H', d, pe+4)[0]
-if machine != 0xa641: raise SystemExit(f'Expected ARM64EC (0xa641), got {machine:#x}')
 size = struct.unpack_from('<I', d, pe+24+56)[0]
 target = size + 0x10000
 if len(d) < target:
