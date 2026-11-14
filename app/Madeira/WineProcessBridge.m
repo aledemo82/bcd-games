@@ -1,4 +1,3 @@
-```
 /* Portions copyright 2026 Russell Barton: code taken from https://github.com/thebcd69/bcd-games (pull request #46 by rbarton124)
  * under GPL-3.0-or-later with the Madeira Converter Exception and modified for BCD in November 2026. See THIRD-PARTY-NOTICES.md. */
 /* Portions copyright 2026 SirDank, ft7t8drgwf-wq and 125hz: code taken from https://github.com/willfaust/Madeira (pull requests #349, #353, #360 and #363; commits 4e568c1, ba617bb and ada55ec)
@@ -4062,4 +4061,3 @@ int wine_session_quit_desktop(void)
     wine_session_end();
     return 1;
 }
-```
