@@ -1110,6 +1110,9 @@ jobs:
             -DLLVM_TABLEGEN="$GITHUB_WORKSPACE/toolchains/llvm-host-build/bin/llvm-tblgen" \
             -DCMAKE_MACOSX_BUNDLE=OFF \
             -DLLVM_BUILD_UTILS=Off -DLLVM_BUILD_TOOLS=Off \
+            -DLLVM_BUILD_LLVM_DYLIB=Off 
+            -DLLVM_LINK_LLVM_DYLIB=Off \
+            -DLLVM_ENABLE_LTO=Off \
             -DLLVM_TARGETS_TO_BUILD="" \
             -DLLVM_INCLUDE_TESTS=Off -DLLVM_INCLUDE_EXAMPLES=Off \
             -DLLVM_INCLUDE_BENCHMARKS=Off -DLLVM_INCLUDE_UTILS=Off \
