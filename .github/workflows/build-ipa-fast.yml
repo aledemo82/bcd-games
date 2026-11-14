@@ -1209,6 +1209,17 @@ jobs:
       # (Apple's agreement, app/Madeira/d3d12/NOTICE.txt); build/madeira-d3d12/deps.sh
       # checks both against their pinned hashes. A missing or mismatched converter
       # would build the stub that draws nothing in any D3D12 game, so fail instead.
+      - name: Extract Metal Shader Converter iOS library
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST="$GITHUB_WORKSPACE/app/Madeira/d3d12"
+          ZIP="$DEST/metal_converter_ios_nuovo.zip"
+          test -s "$ZIP" || { echo "::error::Missing $ZIP"; exit 1; }
+          unzip -o -j "$ZIP" 'libmetalirconverter.dylib' -d "$DEST"
+          test -s "$DEST/libmetalirconverter.dylib" || { echo "::error::Missing extracted iOS library"; exit 1; }
+          echo "::notice::iOS Metal Shader Converter library extracted"
+
       - name: Locate Metal Shader Converter headers
         shell: bash
         run: |
