@@ -844,6 +844,7 @@ if [ "${MADEIRA_COMCTL32_V6_BUILD:-1}" != 0 ]; then
     "$MINGW/llvm-strip" "$v6tmp" || exit 1
     python3 - "$v6tmp" <<'PYV6'
 import sys
+import struct
 p = sys.argv[1]
 d = open(p, 'rb').read()
 def verify_arm64ec(d):
