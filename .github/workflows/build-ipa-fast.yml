@@ -2593,6 +2593,29 @@ jobs:
       - name: Package Madeira and Madeira2 unsigned IPAs
         run: python3 tools/ota-variants.py package build-out/Madeira.xcarchive/Products/Applications/Madeira.app build-out ${{ steps.bn.outputs.n }}
 
+      # Download both unsigned IPA variants from the workflow run's Artifacts.
+      # WARNING: artifacts are accessible to users with access to this repo/run.
+      - name: Verify both unsigned IPAs exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          for variant in Madeira Madeira2; do
+            ipa="build-out/${variant}-0.1.${{ steps.bn.outputs.n }}-unsigned.ipa"
+            test -s "$ipa" || { echo "::error::Missing or empty IPA: $ipa"; exit 1; }
+            ls -lh "$ipa"
+          done
+
+      - name: Upload Madeira and Madeira2 unsigned IPAs
+        uses: actions/upload-artifact@v4
+        with:
+          name: Madeira-and-Madeira2-unsigned-IPAs
+          path: |
+            build-out/Madeira-0.1.${{ steps.bn.outputs.n }}-unsigned.ipa
+            build-out/Madeira2-0.1.${{ steps.bn.outputs.n }}-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
       # Over-the-air install: sign with the owner's certificate (kept in the
       # owner's PRIVATE bucket, never in the repository) and put both signed IPAs
       # plus installation pages (7-day pre-signed links) in the same bucket.
@@ -2615,11 +2638,7 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: bash tools/sign-and-publish-ota.sh build-out/Madeira-0.1.${{ steps.bn.outputs.n }}-unsigned.ipa ${{ steps.bn.outputs.n }} build-out/Madeira2-0.1.${{ steps.bn.outputs.n }}-unsigned.ipa
 
-      # Owner's decision (2026-10-02): no IPA artifact on GitHub at all. The
-      # repository and its Actions are public, so an artifact is downloadable by
-      # anyone; the only copy of a build is the signed IPA in the owner's
-      # private R2 bucket (the OTA step above). If that step did not succeed,
-      # the build fails here instead of keeping the IPA somewhere public.
+      # Preserve build logs as a separate artifact.
       - uses: actions/upload-artifact@v4
         if: always()
         with:
